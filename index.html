@@ -14,8 +14,8 @@
 
         /* 按鈕樣式 */
         button {
-            font-size: 20px;
-            padding: 10px 20px;
+            font-size: 18px;
+            padding: 8px 18px;
             margin: 10px;
         }
 
@@ -81,7 +81,7 @@
         function drawPrize() {
             // 獎項與機率設定
             const prizes = [
-                { name: "頭獎!!", probability: 0.001, cssClass: "grandPrize" },  // 0.1%
+                { name: "頭獎!", probability: 0.001, cssClass: "grandPrize" },  // 0.1%
                 { name: "二獎", probability: 0.008, cssClass: "secondPrize" },   // 0.8%
                 { name: "三獎", probability: 0.02, cssClass: "thirdPrize" },    // 2%
                 { name: "普通獎", probability: 0.08, cssClass: "normalPrize" },  // 8%
@@ -144,7 +144,7 @@
                         results.push(prize.name);
 
                         // 記錄中獎結果
-                        if (["頭獎!!", "二獎", "三獎"].includes(prize.name)) {
+                        if (["頭獎!", "二獎", "三獎"].includes(prize.name)) {
                             addLogEntry(prize);
                         }
 
