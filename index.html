@@ -1,1 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=2.0">
+    <title>抽獎模擬</title>
+    <style>
+        /* 定義不同獎項的字體顏色 */
+        .grandPrize { color: red; font-weight: bold; }
+        .secondPrize { color: blue; font-weight: bold; }
+        .thirdPrize { color: green; font-weight: bold; }
+        .normalPrize { color: black; }
+        .consolationPrize { color: gray; }
+
+        /* 按鈕樣式 */
+        button {
+            font-size: 20px;
+            padding: 10px 20px;
+            margin: 10px;
+        }
+
+        /* 滾動動畫區域 */
+        .spinner {
+            font-size: 24px;
+            height: 50px;
+            overflow: hidden;
+            position: relative;
+            border: 2px solid #000;
+            display: inline-block;
+            width: 200px;
+            text-align: center;
+            margin: 10px;
+        }
+
+        .spinner span {
+            display: block;
+            height: 50px;
+            line-height: 50px;
+        }
+
+        .animate {
+            animation: spin 2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        @keyframes spin {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-250px); } /* 滾動 5 個項目 */
+        }
+
+        .result-display {
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .spinner-container {
+            display: flex;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>試試你的手氣!!頭獎機率0.1%</h1>
+    <button onclick="drawMultiple(1)">抽 1 次</button>
+    <button onclick="drawMultiple(3)">抽 3 次</button>
+    <button onclick="drawMultiple(5)">抽 5 次</button>
+    <button onclick="drawMultiple(12)">抽 12 次</button>
+    
+    <div class="spinner-container" id="spinnerContainer"></div>
+    <p id="result" class="result-display">點擊上方按鈕進行抽獎！</p>
+    <p id="totalDraws">已抽次數：0</p>
+    <p id="totalCost">累積花費：0 元</p>
+    <h2>抽獎紀錄</h2>
+    <div id="log"></div>
+
+    <script>
+        const costPerDraw = 35;  // 每次抽獎的花費為 35 元
+        let totalDraws = 0;      // 累積抽獎次數
+        let totalCost = 0;       // 累積花費金額
+
+        function drawPrize() {
+            // 獎項與機率設定
+            const prizes = [
+                { name: "頭獎!!", probability: 0.001, cssClass: "grandPrize" },  // 0.1%
+                { name: "二獎", probability: 0.008, cssClass: "secondPrize" },   // 0.8%
+                { name: "三獎", probability: 0.02, cssClass: "thirdPrize" },    // 2%
+                { name: "普通獎", probability: 0.08, cssClass: "normalPrize" },  // 8%
+                { name: "安慰獎", probability: 0.899, cssClass: "consolationPrize" } // 94.68%
+            ];
+
+            let randomNumber = Math.random();
+            let cumulativeProbability = 0;
+
+            for (let prize of prizes) {
+                cumulativeProbability += prize.probability;
+                if (randomNumber < cumulativeProbability) {
+                    return prize;
+                }
+            }
+            return prizes[prizes.length - 1]; // 保底返回安慰獎
+        }
+
+        async function drawMultiple(times) {
+            const spinnerContainer = document.getElementById("spinnerContainer");
+            spinnerContainer.innerHTML = ""; // 清空之前的結果
+            const resultDisplay = document.getElementById("result");
+            resultDisplay.innerHTML = "正在抽獎中...";
+            let results = [];
+
+            // 每次抽獎的花費和累積計算
+            totalDraws += times;
+            totalCost += times * costPerDraw;
+
+            for (let i = 0; i < times; i++) {
+                const spinner = document.createElement("div");
+                spinner.classList.add("spinner");
+                spinner.id = `spinner${i}`;
+                spinner.innerHTML = `
+                    <div id="spinnerContent${i}">
+                        <span>頭獎</span>
+                        <span>二獎</span>
+                        <span>三獎</span>
+                        <span>普通獎</span>
+                        <span>安慰獎</span>
+                    </div>
+                `;
+                spinnerContainer.appendChild(spinner);
+
+                // 延遲動畫執行
+                (function(index) {
+                    setTimeout(async () => {
+                        const prize = drawPrize();
+
+                        // 啟動滾動動畫
+                        const spinnerContent = document.getElementById(`spinnerContent${index}`);
+                        spinnerContent.classList.add("animate");
+
+                        // 等待動畫結束
+                        await new Promise(resolve => setTimeout(resolve, 350));
+                        spinnerContent.classList.remove("animate");
+
+                        // 顯示結果
+                        spinner.innerHTML = `<span class="${prize.cssClass}">${prize.name}</span>`;
+                        results.push(prize.name);
+
+                        // 記錄中獎結果
+                        if (["頭獎!!", "二獎", "三獎"].includes(prize.name)) {
+                            addLogEntry(prize);
+                        }
+
+                        // 更新最終結果
+                        if (results.length === times) {
+                            resultDisplay.innerHTML = `全部結果：${results.map(
+                                r => `<span>${r}</span>`
+                            ).join(", ")}`;
+                            document.getElementById("totalDraws").textContent = "已抽次數：" + totalDraws;
+                            document.getElementById("totalCost").textContent = "累積花費：" + totalCost + " 元";
+                        }
+                    }, i * 80); // 每次抽獎稍作延遲，製造逐次動畫效果
+                })(i);
+            }
+        }
+
+        function addLogEntry(prize) {
+            const now = new Date();
+            const dateString = now.toLocaleString();
+            const logEntry = document.createElement("div");
+
+            logEntry.innerHTML = `${dateString} - <span class="${prize.cssClass}">${prize.name}</span>`;
+            document.getElementById("log").prepend(logEntry);
+        }
+    </script>
+</body>
+</html>
 
